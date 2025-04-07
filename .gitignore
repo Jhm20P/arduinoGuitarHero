@@ -39,3 +39,7 @@ Controller/.vscode/
 
 
 Controller/src/config.hpp
+
+
+# Ignore all folders names __pycache__ in any directory
+__pycache__/
