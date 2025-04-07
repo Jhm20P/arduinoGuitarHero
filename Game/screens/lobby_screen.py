@@ -49,10 +49,13 @@ class LobbyScreen(BaseScreen):
     
     def go_back(self):
         """Go back to the host game screen"""
+        # Stop the server before going back to the host screen
+        print("Going back to host screen, stopping server...")
+        self.game_instance.stop_server()
+        
         # Import here to avoid circular imports
         from screens.host_game import HostGameScreen
         self.next_screen = HostGameScreen(self.game_instance)
-        # Note: This will keep the server running, but that's handled in the game_instance
     
     def update(self):
         """Update lobby information"""

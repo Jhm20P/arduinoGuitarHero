@@ -1,13 +1,6 @@
-import asyncio
 import pygame
-import websockets
-import json
-import socket
-import threading
-import queue
-import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from guitarherogame import GameServer
+from networking.network_manager import NetworkManager
 
 class GameInstance:
     def __init__(self):
@@ -28,13 +21,7 @@ class GameInstance:
         
         # Server settings
         self.game_server = None
-        self.http_thread = None
-        self.websocket_thread = None
-        self.websocket_loop = None
-        self.message_queue = queue.Queue()  # Queue to handle incoming messages
-        
-        # HTTP server port (use a non-privileged port)
-        self.http_port = 80
+        self.network_manager = NetworkManager()
         
     def start(self):
         """Start the game loop"""
@@ -77,162 +64,55 @@ class GameInstance:
     def create_game_server(self, game_name):
         """Create and start the game server with the specified name"""
         try:
+            # Create game server object
             self.game_server = GameServer(game_name)
             
-            # Start HTTP server for discovery
-            self.http_thread = threading.Thread(target=self.start_http_server, daemon=True)
-            self.http_thread.start()
-            
-            # Start WebSocket server in a way that properly handles the event loop
-            self.websocket_thread = threading.Thread(target=self.start_websocket_server, daemon=True)
-            self.websocket_thread.start()
+            # Start network services
+            self.network_manager.start_services(self.game_server)
             
             print(f"Game server created: {game_name}")
             print(f"Server running at: {self.game_server.HostIP}:{self.game_server.Port}")
-            print(f"HTTP discovery service running at: http://{self.game_server.HostIP}:{self.http_port}/guitargame")
+            print(f"HTTP discovery service running at: http://{self.game_server.HostIP}:{self.network_manager.http_port}/guitargame")
         except Exception as e:
             print(f"Error creating game server: {e}")
             import traceback
             traceback.print_exc()
     
-    def start_websocket_server(self):
-        """Start the WebSocket server using asyncio.run() which properly manages the event loop"""
-        try:
-            # This is the key change - using asyncio.run() which properly manages the event loop
-            asyncio.run(self.run_websocket_server())
-        except Exception as e:
-            print(f"Error in WebSocket server thread: {e}")
-            import traceback
-            traceback.print_exc()
-    
-    async def run_websocket_server(self):
-        """The async function that runs the WebSocket server"""
-        try:
-            # Start WebSocket server
-            server = await websockets.serve(self.handle_client, "0.0.0.0", self.game_server.Port)
-            print(f"WebSocket server started successfully on port {self.game_server.Port}")
-            
-            # Keep the server running until the program ends
-            await server.wait_closed()
-        except Exception as e:
-            print(f"Error running WebSocket server: {e}")
-            import traceback
-            traceback.print_exc()
-            
-    def start_http_server(self):
-        """Start HTTP server for game discovery"""
-        try:
-            class CustomHandler(BaseHTTPRequestHandler):
-                def do_GET(self_handler):
-                    try:
-                        if self_handler.path == "/guitargame":
-                            if self.game_server:
-                                response = json.dumps(self.game_server.to_dict())
-                                self_handler.send_response(200)
-                                self_handler.send_header("Content-Type", "application/json")
-                                self_handler.end_headers()
-                                self_handler.wfile.write(response.encode())
-                                print(f"Responded to HTTP service discovery with: {response}")
-                            else:
-                                self_handler.send_response(503)  # Service Unavailable
-                                self_handler.end_headers()
-                        else:
-                            self_handler.send_response(404)
-                            self_handler.end_headers()
-                    except Exception as e:
-                        print(f"Error in HTTP handler: {e}")
-                
-                def log_message(self, format, *args):
-                    # Suppress noisy HTTP server logs
-                    pass
-            
-            # Use a non-privileged port that doesn't require admin rights
-            server_address = ("0.0.0.0", self.http_port)
-            http_server = HTTPServer(server_address, CustomHandler)
-            print(f"HTTP server for service discovery started on http://0.0.0.0:{self.http_port}")
-            http_server.serve_forever()
-        except Exception as e:
-            print(f"Error starting HTTP server: {e}")
-            import traceback
-            traceback.print_exc()
-    
-    async def handle_client(self, websocket):
-        """Handle client websocket connections"""
-        try:
-            # Register client
-            print(f"Client connected: {websocket.remote_address}")
-            if self.game_server:
-                self.game_server.ConnectedClients.add(websocket)
-            
-            try:
-                # Keep connection open and handle messages
-                async for message in websocket:
-                    try:
-                        # Process incoming message
-                        print(f"Received message: {message}")
-                        
-                        # Put message in queue for game processing
-                        self.message_queue.put(message)
-                        
-                        # Echo the message back
-                        await websocket.send(f"Server received: {message}")
-                        
-                    except Exception as e:
-                        print(f"Error processing message: {e}")
-            
-            except websockets.exceptions.ConnectionClosed:
-                print(f"Connection closed with client: {websocket.remote_address}")
-            
-            finally:
-                # Unregister client when connection is closed
-                if self.game_server and websocket in self.game_server.ConnectedClients:
-                    self.game_server.ConnectedClients.remove(websocket)
-        except Exception as e:
-            print(f"Error in handle_client: {e}")
-    
     def process_messages(self):
-        """Process messages from the queue"""
-        # Process all available messages
-        try:
-            while not self.message_queue.empty():
-                message = self.message_queue.get()
+        """Process game messages from controllers"""
+        # Get messages from network manager
+        messages = self.network_manager.process_messages()
+        
+        # Process each message
+        for message in messages:
+            try:
+                # For example, if message contains note data:
+                # Parse message and add notes to the game
+                # This is just an example - actual implementation would depend on message format
+                
+                # Assuming messages are integers representing tracks (0-3)
                 try:
-                    # For example, if message contains note data:
-                    # Parse message and add notes to the game
-                    # This is just an example - actual implementation would depend on message format
+                    track = int(message)
+                    if 0 <= track < 4:
+                        # If we're on the playing screen, add a note
+                        if hasattr(self.current_screen, 'add_note'):
+                            self.current_screen.add_note(track)
+                except ValueError:
+                    # Not a valid track number
+                    pass
                     
-                    # Assuming messages are integers representing tracks (0-3)
-                    try:
-                        track = int(message)
-                        if 0 <= track < 4:
-                            # If we're on the playing screen, add a note
-                            if hasattr(self.current_screen, 'add_note'):
-                                self.current_screen.add_note(track)
-                    except ValueError:
-                        # Not a valid track number
-                        pass
-                        
-                except Exception as e:
-                    print(f"Error processing message from queue: {e}")
-        except Exception as e:
-            print(f"Error in process_messages: {e}")
-    
-    async def broadcast_message(self, message):
-        """Send a message to all connected clients"""
-        try:
-            if self.game_server and self.game_server.ConnectedClients:
-                await asyncio.gather(
-                    *[client.send(message) for client in self.game_server.ConnectedClients]
-                )
-        except Exception as e:
-            print(f"Error broadcasting message: {e}")
+            except Exception as e:
+                print(f"Error processing message: {e}")
     
     def stop_server(self):
-        """Stop the server if it's running"""
-        # The WebSocket and HTTP servers are run in daemon threads
-        # which will automatically terminate when the main program exits
-        print("Server shutdown initiated")
-
+        """Stop the game server and all networking services"""
+        # Stop all network services
+        if self.network_manager:
+            self.network_manager.stop_services()
+            
+        # Reset game server
+        self.game_server = None
+        print("Server shutdown completed")
 
 if __name__ == "__main__":
     game = GameInstance()
