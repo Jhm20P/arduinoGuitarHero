@@ -12,6 +12,13 @@ class GameServer:
     HostIP = socket.gethostbyname(HostName)
     Port = 8765
 
+    def to_dict(self):
+        return {
+            "hostname": self.HostName,
+            "ip": self.HostIP,
+            "port": self.Port
+        }
+
 
 # Configuration for the WebSocket server
 HOST = "0.0.0.0"  # Listen on all available interfaces
@@ -34,7 +41,7 @@ class ServiceDiscoveryHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/guitargame":
             # Respond with local IP and port
-            response = json.dumps({"ip": get_local_ip(), "port": PORT})
+            response = json.dumps(GameServer().to_dict())
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
