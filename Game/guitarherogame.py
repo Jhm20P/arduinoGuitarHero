@@ -8,12 +8,14 @@ import threading
 
 
 class GameServer:
+    GameName = "Guitar Hero Game"
     HostName = socket.gethostname()
     HostIP = socket.gethostbyname(HostName)
     Port = 8765
 
     def to_dict(self):
         return {
+            "game_name": self.GameName,
             "hostname": self.HostName,
             "ip": self.HostIP,
             "port": self.Port
@@ -56,25 +58,8 @@ class ServiceDiscoveryHandler(BaseHTTPRequestHandler):
 
 def start_http_server():
     http_server = HTTPServer((HOST, 80), ServiceDiscoveryHandler)
-    print(f"HTTP server for service discovery started on http://{HOST}:8080")
+    print(f"HTTP server for service discovery started on http://{HOST}:{PORT}")
     http_server.serve_forever()
-
-# Handle client connections for the "/guitargame" endpoint
-
-
-async def handle_service_discovery(websocket):
-    path = websocket
-    if path == "/guitargame":
-        try:
-            # Respond with local IP and port
-            response = json.dumps({"ip": get_local_ip(), "port": PORT})
-            await websocket.send(response)
-            print(f"Responded to service discovery with: {response}")
-        except Exception as e:
-            print(f"Error in service discovery: {e}")
-    else:
-        # Fallback to the main client handler for other paths
-        await handle_client(websocket)
 
 # Handle client connections
 
