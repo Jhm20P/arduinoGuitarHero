@@ -12,6 +12,13 @@ class GameServer:
     HostName = socket.gethostname()
     HostIP = socket.gethostbyname(HostName)
     Port = 8765
+    ConnectedClients = set()
+    
+    def __init__(self, gameName=str):
+        self.GameName = gameName
+        self.HostName = socket.gethostname()
+        self.HostIP = socket.gethostbyname(self.HostName)
+        self.Port = 8765
 
     def to_dict(self):
         return {
@@ -43,7 +50,7 @@ class ServiceDiscoveryHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/guitargame":
             # Respond with local IP and port
-            response = json.dumps(GameServer().to_dict())
+            response = json.dumps(GameServer("Guitar Hero Big Game").to_dict())
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
