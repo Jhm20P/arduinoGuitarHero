@@ -36,3 +36,6 @@
 # PIO Configs
 Controller/.vscode/
 .vscode/
+
+
+Controller/src/config.hpp
