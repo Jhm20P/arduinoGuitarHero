@@ -42,16 +42,6 @@ void setup() {
 void loop() {
   carrier.Buttons.update(); // Update the touch buttons state
 
-  // Debugging: Check button states
-  if (carrier.Buttons.onTouchDown(TOUCH1)) {
-    Serial.println("TOUCH1 pressed");
-  }
-  if (carrier.Buttons.onTouchDown(TOUCH0)) {
-    Serial.println("TOUCH0 pressed");
-  }
-  if (carrier.Buttons.onTouchDown(TOUCH2)) {
-    Serial.println("TOUCH2 pressed");
-  }
 
   websocket::webSocketLoop();
   // Serial.println(rand() % 1000 + 1);

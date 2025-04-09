@@ -66,9 +66,8 @@ void StateManager::loop() {
         return;
     }
 
-    Serial.println("StateManager: Entering current state update loop.");
     currentState->update();
-    Serial.println("StateManager: Exiting current state update loop.");
+
 }
 
 void StateManager::handleWebSocketEvent(char message[]) {

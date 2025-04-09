@@ -6,12 +6,15 @@
 
 class MenuState : public State
 {
+private:
+    bool isConnected = false;
 public:
     MenuState(MKRIoTCarrier *c);
 
     void initDisplay() override;
     void update() override;
     void handleWebSocketEvent(char message[]) override;
+    void sendConnectionRequest(char ipaddress[], int port);
 };
 
 

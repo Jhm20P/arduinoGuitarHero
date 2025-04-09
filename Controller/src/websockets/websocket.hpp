@@ -25,7 +25,7 @@ class websocket {
         static void webSocketDisconnect();
         static void webSocketWIFI();
         static void webSocketLoop();
-
+        static int getServerPort(char ipaddress[]);
         static void registerStateManager(StateManager *stateManager);
 };
 
