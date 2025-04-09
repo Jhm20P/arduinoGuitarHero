@@ -46,7 +46,7 @@ void MenuState::update()
     carrier->display.setCursor(0, 20);
     carrier->display.print("Scanning for servers...");
     
-    websocket::updateServerScan();
+    //websocket::updateServerScan();
     
     ServerInfo* server = websocket::getScannedServers();
     if (server != nullptr) {

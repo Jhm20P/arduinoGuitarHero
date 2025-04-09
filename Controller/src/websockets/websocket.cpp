@@ -82,6 +82,11 @@ void websocket::updateServerScan() {
 }
 
 ServerInfo* websocket::getScannedServers() {
+
+  // Temporarily deliver one specific server for testing
+  servers[0] = new ServerInfo("192.168.0.107", 80, "HostName", "GameName");
+  serverCount = 1; // Set serverCount to 1 for testing
+
     return servers[0] != nullptr ? servers[0] : nullptr;
 }
 
