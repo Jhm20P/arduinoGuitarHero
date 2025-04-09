@@ -1,5 +1,7 @@
 import pygame
-from guitarherogame import GameServer
+import os
+import random
+from models.game_server import GameServer
 from networking.network_manager import NetworkManager
 
 class GameInstance:
@@ -113,6 +115,40 @@ class GameInstance:
         # Reset game server
         self.game_server = None
         print("Server shutdown completed")
+    
+    def get_random_midi_file(self):
+        """Get a random MIDI file from the music directory"""
+        try:
+            # Get the directory of the current script
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            music_dir = os.path.join(base_dir, 'music')
+            
+            # Check if music directory exists
+            if not os.path.exists(music_dir):
+                print(f"Music directory not found: {music_dir}")
+                return None
+            
+            # Get all MIDI files (.mid or .midi extensions)
+            midi_files = [f for f in os.listdir(music_dir) 
+                         if f.lower().endswith(('.mid', '.midi'))]
+            
+            # Check if any MIDI files were found
+            if not midi_files:
+                print("No MIDI files found in the music directory")
+                return None
+            
+            # Select a random MIDI file
+            random_midi = random.choice(midi_files)
+            midi_path = os.path.join(music_dir, random_midi)
+            
+            print(f"Selected random MIDI file: {random_midi}")
+            return midi_path
+            
+        except Exception as e:
+            print(f"Error loading random MIDI file: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
 
 if __name__ == "__main__":
     game = GameInstance()

@@ -7,26 +7,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 
 
-class GameServer:
-    GameName = "Guitar Hero Game"
-    HostName = socket.gethostname()
-    HostIP = socket.gethostbyname(HostName)
-    Port = 8765
-    ConnectedClients = set()
-    
-    def __init__(self, gameName=str):
-        self.GameName = gameName
-        self.HostName = socket.gethostname()
-        self.HostIP = socket.gethostbyname(self.HostName)
-        self.Port = 8765
-
-    def to_dict(self):
-        return {
-            "game_name": self.GameName,
-            "hostname": self.HostName,
-            "ip": self.HostIP,
-            "port": self.Port
-        }
 
 
 # Configuration for the WebSocket server

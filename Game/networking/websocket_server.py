@@ -6,12 +6,16 @@ import asyncio
 import threading
 import websockets
 import time
+from models.game_server import GameServer
+from models.player import Player
 
 class GameWebSocketServer:
     """
     WebSocket server for Guitar Hero Game
     """
-    def __init__(self, game_server, message_queue):
+    game_server: GameServer = None
+
+    def __init__(self, game_server:GameServer, message_queue):
         self.game_server = game_server
         self.message_queue = message_queue
         self.websocket_thread = None
@@ -48,12 +52,14 @@ class GameWebSocketServer:
             print(f"Error in WebSocket server thread: {e}")
             import traceback
             traceback.print_exc()
-    
     async def _run_websocket_server(self):
         """The async function that runs the WebSocket server"""
         try:
             # Create a task that monitors the stop_event
             stop_monitor = asyncio.create_task(self._monitor_stop_event())
+            
+            # Create a task to process outgoing messages
+            process_messages = asyncio.create_task(self._process_outgoing_messages())
             
             # Start WebSocket server
             async with websockets.serve(self._handle_client, "0.0.0.0", self.game_server.Port) as server:
@@ -62,12 +68,54 @@ class GameWebSocketServer:
                 # Wait for either the server to close or the stop event to be set
                 # This allows us to exit cleanly when stop_event is set
                 await stop_monitor
+                
+                # Cancel the message processing task
+                process_messages.cancel()
+                try:
+                    await process_messages
+                except asyncio.CancelledError:
+                    pass
+                
                 print("WebSocket server stopped")
                 
         except Exception as e:
             print(f"Error running WebSocket server: {e}")
             import traceback
             traceback.print_exc()
+    
+    async def _process_outgoing_messages(self):
+        """Process outgoing messages from the queue"""
+        while not self.stop_event.is_set():
+            # Get any queued messages
+            if self.game_server:
+                messages = self.game_server.get_queued_messages()
+                  # Process each message
+                for msg_type, message, recipient in messages:
+                    try:
+                        if msg_type == "broadcast":
+                            # Broadcast message to all clients
+                            if self.game_server.ConnectedClients:
+                                for player in self.game_server.ConnectedClients:
+                                    try:
+                                        await player.websocket.send(message)
+                                        print(f"Broadcast message sent to {player.player_name}: {message}")
+                                    except Exception as e:
+                                        print(f"Error sending to {player.player_name}: {e}")
+                        elif msg_type == "direct" and recipient:
+                            # Send message to specific client
+                            for player in self.game_server.ConnectedClients:
+                                if player.websocket == recipient:
+                                    try:
+                                        await player.websocket.send(message)
+                                        print(f"Direct message sent to {player.player_name}: {message}")
+                                    except Exception as e:
+                                        print(f"Error sending direct message: {e}")
+                                    break
+                    except Exception as e:
+                        print(f"Error sending message: {e}")
+            
+            # Short delay to avoid busy waiting
+            await asyncio.sleep(0.05)  # Check for new messages every 50ms
     
     async def _monitor_stop_event(self):
         """Monitor the stop event and return when it's set"""
@@ -81,7 +129,17 @@ class GameWebSocketServer:
             # Register client
             print(f"Client connected: {websocket.remote_address}")
             if self.game_server:
-                self.game_server.ConnectedClients.add(websocket)
+                # Add the client to the connected clients list in the game server
+                player = self.game_server.add_client(websocket)
+
+                # Send state change message to the client
+                await websocket.send("SM-PlayingState")
+
+                # Wait for a short time to allow the client to process the message
+                await asyncio.sleep(0.1)
+
+                # Send player object information
+                await websocket.send(player.__str__())
             
             try:
                 # Keep connection open and handle messages
@@ -94,7 +152,7 @@ class GameWebSocketServer:
                         self.message_queue.put(message)
                         
                         # Echo the message back
-                        await websocket.send(f"Server received: {message}")
+                        #await websocket.send(f"Server received: {message}")
                         
                     except Exception as e:
                         print(f"Error processing message: {e}")
@@ -105,7 +163,8 @@ class GameWebSocketServer:
             finally:
                 # Unregister client when connection is closed
                 if self.game_server and websocket in self.game_server.ConnectedClients:
-                    self.game_server.ConnectedClients.remove(websocket)
+                    self.game_server.send_message("SM-MenuState", websocket)
+                    self.game_server.remove_client(websocket)
         except Exception as e:
             print(f"Error in handle_client: {e}")
     
