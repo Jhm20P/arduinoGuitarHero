@@ -12,6 +12,11 @@ void StateManager::setState(char *stateName) {
     // For simplicity, let's assume we have a function that creates the state based on the name
     State *newState = nullptr;
 
+    Serial.print("Setting state to: ");
+    Serial.println(stateName);
+
+    Serial.println("State = " + String(strcmp(stateName, "MenuState")));
+
     if (strcmp(stateName, "MenuState") == 0) {
         newState = new MenuState(carrier);
     } else if (strcmp(stateName, "PlayingState") == 0) {
@@ -25,17 +30,33 @@ void StateManager::setState(char *stateName) {
 }
 
 void StateManager::setState(State *state) {
-    // Clean up the previous state if necessary
+    Serial.println("Setting new state...");    // Clean up the previous state if necessary
     if (currentState) {
-        delete currentState;
+        Serial.println("Deleting current state...");
+        State* oldState = currentState;
+        currentState = nullptr;  // Clear pointer before deleting
+        delete oldState;
+        Serial.println("Old state deleted");
     }
 
     // Set the new state
+    Serial.println("Assigning new state...");
+    if (state == nullptr) {
+        Serial.println("Error: Attempted to set nullptr state");
+        return;
+    }
     currentState = state;
+    Serial.println("New state set.");
 
-    // Initialize the new state
-    if (currentState) {
+    // Make sure we have a valid state before initializing
+    if (currentState != nullptr) {
+        Serial.println("Initializing new state...");
+        // Add small delay to ensure hardware is ready
+        delay(10);
         currentState->initDisplay();
+        Serial.println("State initialization complete");
+    } else {
+        Serial.println("Error: Attempted to set nullptr state");
     }
 }
 

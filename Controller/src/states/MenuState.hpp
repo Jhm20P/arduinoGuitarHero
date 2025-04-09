@@ -12,6 +12,8 @@ public:
     MenuState(MKRIoTCarrier *c);
 
     void initDisplay() override;
+    void update() override;
+    void handleWebSocketEvent(char message[]) override;
 };
 
 

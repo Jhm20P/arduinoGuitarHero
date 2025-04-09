@@ -16,6 +16,76 @@ WebSocketsClient websocket::webSocket;
 
 int status = WL_IDLE_STATUS;
 
+ServerInfo* websocket::servers[10] = { nullptr };
+int websocket::serverCount = 0;
+int websocket::currentScanIndex = 1;
+unsigned long websocket::lastScanTime = 0;
+
+void websocket::initServerScan() {
+    serverCount = 0;
+    currentScanIndex = 1;
+    lastScanTime = 0;
+    for (int i = 0; i < 10; i++) {
+        servers[i] = nullptr;
+    }
+}
+
+void websocket::updateServerScan() {
+    if (millis() - lastScanTime < 10) return; // throttle scan rate
+    lastScanTime = millis();
+
+    IPAddress localIP = WiFi.localIP();
+
+    for (int i = 0; i < 3 && currentScanIndex < 255; i++) {
+        if (currentScanIndex == localIP[3]) {
+            currentScanIndex++;
+            continue;
+        }
+
+        char ipaddress[16];
+        snprintf(ipaddress, sizeof(ipaddress), "%d.%d.%d.%d",
+                localIP[0], localIP[1], localIP[2], currentScanIndex);
+
+        Serial.print("Scanning IP: ");
+        Serial.println(ipaddress);
+
+        if (WiFi.ping(ipaddress, 5) != -1) {
+            if (client.connect(ipaddress, 80)) {
+                client.println("GET /guitargame HTTP/1.1");
+                client.print("Host: ");
+                client.println(ipaddress);
+                client.println("Connection: close");
+                client.println();
+
+                unsigned long timeout = millis() + 50;
+                while (millis() < timeout && client.connected()) {
+                    if (client.available()) {
+                        String line = client.readStringUntil('\n');
+                        if (line.startsWith("HTTP/1.1 200 OK")) {
+                            if (serverCount < 10) {
+                                servers[serverCount++] = new ServerInfo(ipaddress, 80, "HostName", "GameName");
+                                Serial.print("Found server at: ");
+                                Serial.println(ipaddress);
+                            }
+                            break;
+                        }
+                    }
+                    yield();
+                }
+
+                client.stop();
+            }
+        }
+
+        currentScanIndex++;
+    }
+}
+
+ServerInfo* websocket::getScannedServers() {
+    return servers[0] != nullptr ? servers[0] : nullptr;
+}
+
+
 
 void websocket::webSocketSend(char message[]) {
     if (webSocket.isConnected()) {
@@ -130,106 +200,6 @@ void websocket::webSocketDisconnect() {
     webSocket.disconnect();
 }
 
-
-ServerInfo *websocket::getServers() {
-
-  // Maximum number of servers we'll track
-  const int MAX_SERVERS = 10;
-  // Create a list to store the server information with proper initialization
-  ServerInfo *servers[MAX_SERVERS];
-  for (int i = 0; i < MAX_SERVERS; i++) {
-    servers[i] = nullptr;
-  }
-
-
-
-  IPAddress localAddress = WiFi.localIP();
-  int serverCount = 0;
-  const int CONNECTION_TIMEOUT = 100; // milliseconds
-  
-  // Only scan a reasonable subset of the subnet to avoid long delays
-  for (int i = 1; i < 255 && serverCount < MAX_SERVERS; i++) {
-    if (i == localAddress[3]) {
-      continue; // Skip the current device's IP address
-    }
-
-    // Create the IP address to scan
-    char ipaddress[16];
-    snprintf(ipaddress, sizeof(ipaddress), "%d.%d.%d.%d", localAddress[0], localAddress[1], localAddress[2], i);
-
-    if(WiFi.ping(ipaddress, 5) == -1) {
-      continue; // Skip if the IP address is unreachable
-    }
-    
-    Serial.print("Scanning IP: ");
-    Serial.println(ipaddress);
-    
-    // Try to establish a connection
-    if (client.connect(ipaddress, 80)) {
-      // Send HTTP request
-      client.println("GET /guitargame HTTP/1.1");
-      client.print("Host: ");
-      client.println(ipaddress);
-      client.println("Connection: close");
-      client.println(); // Important: end HTTP headers with blank line
-      
-      // Set timeout for reading the response
-      unsigned long startTime = millis();
-      bool serverFound = false;
-      
-      // Wait for a response with timeout
-      while (client.connected() && millis() - startTime < CONNECTION_TIMEOUT) {
-        if (client.available()) {
-          String line = client.readStringUntil('\n');
-          if (line.startsWith("HTTP/1.1 200 OK")) {
-            // Server found - store info
-            servers[serverCount] = new ServerInfo(ipaddress, 80, "HostName", "GameName");
-            serverCount++;
-            serverFound = true;
-            break;
-          }
-        }
-        yield(); // Give other processes a chance to run
-      }
-      
-      // Close the connection whether we found a server or not
-      client.stop();
-      
-      if (serverFound) {
-        Serial.print("Found server at: ");
-        Serial.println(ipaddress);
-      }
-    } else {
-      // Connection failed, clean up
-      client.stop();
-    }
-    
-    // Brief delay between connection attempts to avoid overwhelming the network
-    delay(20);
-  }
-  
-  // Create the result array with the correct size
-  ServerInfo *result = nullptr;
-  if (serverCount > 0) {
-    result = new ServerInfo[serverCount];
-    // Copy found servers to the result array
-    for (int i = 0; i < serverCount; i++) {
-      if (servers[i] != nullptr) {
-        result[i] = *servers[i];
-        delete servers[i]; // Clean up the individual ServerInfo objects
-      }
-    }
-  } else {
-    // Return an empty array if no servers found
-    result = new ServerInfo[0];
-  }
-  
-  Serial.print("Found ");
-  Serial.print(serverCount);
-  Serial.println(" servers");
-  
-  return result;
-}
 
 void websocket::webSocketLoop()
 {

@@ -30,31 +30,12 @@ void setup() {
   
 
 
-  //stateManager.setState("MenuState");
+  stateManager.setState("MenuState");
 
-  ServerInfo *servers = websocket::getServers();
-  if (servers == nullptr) {
-    Serial.println("No servers found.");
-  }
-  else {
-    Serial.println("Servers found:");
-    for (int i = 0; i < 10; i++) {
-      if (servers[i].ipaddress == nullptr) {
-        break; // Stop if we reach an empty server entry
-      }
-      Serial.print("Server IP: ");
-      Serial.println(servers[i].ipaddress);
-      Serial.print("Server Port: ");
-      Serial.println(servers[i].port);
-      Serial.print("Host Name: ");
-      Serial.println(servers[i].HostName);
-      Serial.print("Game Name: ");
-      Serial.println(servers[i].GameName);
-    }
-  }
+  Serial.println("Setup complete");
 }
 
 void loop() {
-  //websocket::webSocketLoop();
-  //stateManager.loop();
+  websocket::webSocketLoop();
+  stateManager.loop();
 }

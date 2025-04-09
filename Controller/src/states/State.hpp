@@ -5,16 +5,16 @@
 #include <Arduino_MKRIoTCarrier.h>
 
 class State {
-private:
-    MKRIoTCarrier *carrier;
-public:
-    State(MKRIoTCarrier *c);
+    private:
+        MKRIoTCarrier *carrier;
+    public:
+        State(MKRIoTCarrier *c);
 
-    
-    virtual void initDisplay();
-    virtual void handleWebSocketEvent(char message[]);
+        
+        virtual void initDisplay();
+        virtual void handleWebSocketEvent(char message[]);
 
-    void update();
+        virtual void update();
 };
 
 

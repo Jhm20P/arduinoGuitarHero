@@ -11,12 +11,18 @@ class websocket {
         static StateManager *_stateManager;
         static WiFiClient client;
         static WebSocketsClient webSocket;
+        static ServerInfo* servers[10];
+        static int serverCount;
+        static int currentScanIndex;
+        static unsigned long lastScanTime;
     public:
+        static void initServerScan();
+        static void updateServerScan();
+        static ServerInfo* getScannedServers();
         static void webSocketSend(char message[]);
         static void webSocketEvent(WStype_t type, uint8_t *payload, size_t length);
         static void webSocketConnect(char ipaddress[], int port);
         static void webSocketDisconnect();
-        static ServerInfo *getServers();
         static void webSocketWIFI();
         static void webSocketLoop();
 
