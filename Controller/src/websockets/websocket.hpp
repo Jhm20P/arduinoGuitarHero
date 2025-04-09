@@ -18,14 +18,14 @@ class websocket {
     public:
         static void initServerScan();
         static void updateServerScan();
-        static ServerInfo* getScannedServers();
+        static ServerInfo** getScannedServers();
         static void webSocketSend(char message[]);
         static void webSocketEvent(WStype_t type, uint8_t *payload, size_t length);
         static void webSocketConnect(char ipaddress[], int port);
         static void webSocketDisconnect();
         static void webSocketWIFI();
         static void webSocketLoop();
-
+        static int getServerPort(char ipaddress[]);
         static void registerStateManager(StateManager *stateManager);
 };
 

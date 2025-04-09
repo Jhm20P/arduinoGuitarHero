@@ -18,6 +18,7 @@ void PlayingState::update()
     // Update the display or handle any other logic for the playing state
     carrier->display.setCursor(0, 20);
     carrier->display.print("Playing...");
+    Serial.println(rand() % 1000 + 1);
 }
 
 void PlayingState::handleWebSocketEvent(char message[])

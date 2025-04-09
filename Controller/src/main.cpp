@@ -10,8 +10,12 @@ MKRIoTCarrier carrier;
 StateManager stateManager(&carrier);
 
 void setup() {
+  
   carrier.begin();
   carrier.display.init(240, 240);
+  carrier.display.setTextSize(1);
+
+  
 
   websocket::registerStateManager(&stateManager);
 
@@ -30,12 +34,17 @@ void setup() {
   
 
 
-  stateManager.setState("MenuState");
+  stateManager.setState("MenuState"); // Set the initial state to PlayingState
 
   Serial.println("Setup complete");
 }
 
 void loop() {
+  carrier.Buttons.update(); // Update the touch buttons state
+
+
   websocket::webSocketLoop();
+  // Serial.println(rand() % 1000 + 1);
   stateManager.loop();
+  delay(30);
 }

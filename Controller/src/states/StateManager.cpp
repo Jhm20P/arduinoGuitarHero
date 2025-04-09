@@ -61,10 +61,13 @@ void StateManager::setState(State *state) {
 }
 
 void StateManager::loop() {
-    // Call the loop method of the current state
-    if (currentState) {
-        currentState->update();
+    if (!currentState) {
+        Serial.println("Error: No current state set. Loop cannot proceed.");
+        return;
     }
+
+    currentState->update();
+
 }
 
 void StateManager::handleWebSocketEvent(char message[]) {

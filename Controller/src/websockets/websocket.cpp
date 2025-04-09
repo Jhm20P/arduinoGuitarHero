@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <SPI.h>
 #include <config.hpp>
 #include "websocket.hpp"
@@ -81,16 +82,108 @@ void websocket::updateServerScan() {
     }
 }
 
-ServerInfo* websocket::getScannedServers() {
-
-  // Temporarily deliver one specific server for testing
-  servers[0] = new ServerInfo("192.168.0.107", 80, "HostName", "GameName");
-  serverCount = 1; // Set serverCount to 1 for testing
-
-    return servers[0] != nullptr ? servers[0] : nullptr;
+ServerInfo** websocket::getScannedServers() {
+    // Check if servers are already initialized to avoid memory leaks
+    static bool serversInitialized = false;
+    
+    if (!serversInitialized) {
+        // Clean up any existing server data first
+        for (int i = 0; i < 10; i++) {
+            if (servers[i] != nullptr) {
+                delete servers[i];
+                servers[i] = nullptr;
+            }
+        }
+        
+        // Hardcoded test servers - only create once
+        servers[0] = new ServerInfo("192.168.0.14", 80, "HostName", "GameName");
+        servers[1] = new ServerInfo("192.168.0.15", 80, "HostName2", "GameName2");
+        servers[2] = new ServerInfo("192.168.0.16", 80, "HostName3", "GameName3");
+        servers[3] = new ServerInfo("192.168.0.107", 80, "HostName4", "GameName4");
+        
+        // Ensure null termination of the array
+        for (int i = 4; i < 10; i++) {
+            servers[i] = nullptr;
+        }
+        
+        serverCount = 4;
+        serversInitialized = true;
+    }
+    
+    return servers;
 }
 
+int websocket::getServerPort(char ipaddress[]) {
+    // Make HTTP GET request to target IP address at endpoint /guitargame
+    char request[128];
+    snprintf(request, sizeof(request), "GET /guitargame HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n", ipaddress);
 
+    Serial.print("Connecting to server at: ");
+    Serial.println(ipaddress);
+
+    if (client.connect(ipaddress, 80)) {
+        Serial.println("Connection successful.");
+
+        Serial.println("Sending HTTP request:");
+        Serial.println(request);
+        client.print(request);
+
+        unsigned long timeout = millis() + 10000; // 10-second timeout
+        String fullResponse = ""; // Capture the full response
+
+        while (millis() < timeout && client.connected()) {
+            while (client.available()) {
+                String line = client.readStringUntil('\n');
+                Serial.print("Received line: ");
+                Serial.println(line);
+                fullResponse += line + "\n"; // Append to full response
+            }
+            yield();
+        }
+
+        Serial.println("Full Response:");
+        Serial.println(fullResponse);
+
+        // Attempt to find and parse JSON in the full response
+        int jsonStart = fullResponse.indexOf("{");
+        if (jsonStart != -1) {
+            String jsonString = fullResponse.substring(jsonStart);
+            Serial.print("Extracted JSON: ");
+            Serial.println(jsonString);
+
+            StaticJsonDocument<256> doc;
+            DeserializationError error = deserializeJson(doc, jsonString);
+            if (error) {
+                Serial.print("Deserialization Error: ");
+                Serial.println(error.c_str());
+            } else {
+                const char* gameName = doc["game_name"];
+                const char* hostname = doc["hostname"];
+                const char* ip = doc["ip"];
+                int port = doc["port"];
+
+                Serial.print("Game Name: ");
+                Serial.println(gameName);
+                Serial.print("Host Name: ");
+                Serial.println(hostname);
+                Serial.print("IP: ");
+                Serial.println(ip);
+                Serial.print("Port: ");
+                Serial.println(port);
+
+                return port; // Return the parsed port
+            }
+        } else {
+            Serial.println("No JSON found in response.");
+        }
+
+        client.stop();
+    } else {
+        Serial.println("Connection failed.");
+    }
+
+    return -1; // Not found
+}
 
 void websocket::webSocketSend(char message[]) {
     if (webSocket.isConnected()) {
@@ -123,8 +216,6 @@ void websocket::webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
             // Call the setState method of the StateManager with the new state name
             _stateManager->setState(stateName);
             break;
-          } else {
-            Serial.println("Invalid state change message.");
           }
 
 
