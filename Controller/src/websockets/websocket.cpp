@@ -99,7 +99,7 @@ ServerInfo** websocket::getScannedServers() {
         servers[0] = new ServerInfo("192.168.0.14", 80, "HostName", "GameName");
         servers[1] = new ServerInfo("192.168.0.15", 80, "HostName2", "GameName2");
         servers[2] = new ServerInfo("192.168.0.16", 80, "HostName3", "GameName3");
-        servers[3] = new ServerInfo("192.168.0.17", 80, "HostName4", "GameName4");
+        servers[3] = new ServerInfo("192.168.0.107", 80, "HostName4", "GameName4");
         
         // Ensure null termination of the array
         for (int i = 4; i < 10; i++) {
@@ -216,9 +216,6 @@ void websocket::webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
             // Call the setState method of the StateManager with the new state name
             _stateManager->setState(stateName);
             break;
-          } else {
-            Serial.print("Invalid state change message: ");
-            Serial.println((char *)payload);
           }
 
 

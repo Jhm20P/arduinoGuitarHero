@@ -38,6 +38,7 @@ void MenuState::initDisplay()
         Serial.println("print completed");
         
         Serial.println("MenuState display initialized.");
+        carrier->display.setTextSize(1);
     
 }
 
@@ -82,7 +83,6 @@ void MenuState::update()
             Serial.print(":");
             Serial.println(servers[selectedServerIndex]->port);
         }
-        Serial.println(selectedServerIndex);
         for (int i = 0; i < serverCount; i++) {
             carrier->display.setCursor(5, 80 + (i * 10));
             if (i == selectedServerIndex) {
@@ -121,7 +121,5 @@ void MenuState::sendConnectionRequest(char ipaddress[], int port)
 void MenuState::handleWebSocketEvent(char message[])
 {
     // Handle the WebSocket event in the menu state
-    carrier->display.setCursor(0, 60);
-    carrier->display.print("WebSocket Message: ");
-    carrier->display.print(message);
+    // Should not be called in this state
 }
