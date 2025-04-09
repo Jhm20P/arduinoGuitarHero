@@ -81,13 +81,26 @@ void websocket::updateServerScan() {
     }
 }
 
-ServerInfo* websocket::getScannedServers() {
+ServerInfo** websocket::getScannedServers() {
 
   // Temporarily deliver one specific server for testing
-  servers[0] = new ServerInfo("192.168.0.107", 80, "HostName", "GameName");
+  char* ip = strdup("192.168.0.14");
+  servers[0] = new ServerInfo(ip, 80, "HostName", "GameName");
   serverCount = 1; // Set serverCount to 1 for testing
+  // make three servers for testing
+  char* ip2 = strdup("192.168.0.15");
+  servers[1] = new ServerInfo(ip2, 80, "HostName2", "GameName3");
+  serverCount = 2; // Set serverCount to 1 for testing
 
-    return servers[0] != nullptr ? servers[0] : nullptr;
+  char* ip3 = strdup("192.168.0.16");
+  servers[2] = new ServerInfo(ip3, 80, "HostName3", "GameName3");
+  serverCount = 3; // Set serverCount to 1 for testing
+
+  char* ip4 = strdup("192.168.0.17");
+  servers[3] = new ServerInfo(ip4, 80, "HostName4", "GameName4");
+  serverCount = 4; // Set serverCount to 1 for testing
+
+    return servers != nullptr ? servers : nullptr;
 }
 
 

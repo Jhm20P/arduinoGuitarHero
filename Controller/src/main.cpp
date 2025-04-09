@@ -12,6 +12,8 @@ StateManager stateManager(&carrier);
 void setup() {
   carrier.begin();
   carrier.display.init(240, 240);
+  carrier.display.setTextSize(1);
+  carrier.Buttons.begin();
 
   websocket::registerStateManager(&stateManager);
 
@@ -36,6 +38,7 @@ void setup() {
 }
 
 void loop() {
+  carrier.Buttons.update();
   websocket::webSocketLoop();
   stateManager.loop();
 }
