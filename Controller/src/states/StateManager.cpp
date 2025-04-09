@@ -34,6 +34,7 @@ void StateManager::setState(State *state) {
     if (currentState) {
         Serial.println("Deleting current state...");
         State* oldState = currentState;
+        currentState->destroy();  // Call destroy to clean up resources
         currentState = nullptr;  // Clear pointer before deleting
         delete oldState;
         Serial.println("Old state deleted");
