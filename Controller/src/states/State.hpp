@@ -5,8 +5,9 @@
 #include <Arduino_MKRIoTCarrier.h>
 
 class State {
-    private:
+    protected:
         MKRIoTCarrier *carrier;
+    private:
     public:
         State(MKRIoTCarrier *c);
 

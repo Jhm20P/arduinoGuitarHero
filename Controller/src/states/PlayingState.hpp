@@ -7,7 +7,6 @@ class PlayingState : public State
 {
 private:
     /* data */
-    MKRIoTCarrier *carrier;
 public:
     PlayingState(MKRIoTCarrier *c);
 

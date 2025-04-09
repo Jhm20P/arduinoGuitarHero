@@ -6,8 +6,6 @@
 
 class MenuState : public State
 {
-private:
-    MKRIoTCarrier *carrier;
 public:
     MenuState(MKRIoTCarrier *c);
 
