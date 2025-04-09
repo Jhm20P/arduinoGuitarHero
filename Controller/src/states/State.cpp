@@ -16,3 +16,7 @@ void State::handleWebSocketEvent(char message[]) {
 void State::update() {
     // Default empty implementation
 }
+
+void State::destroy() {
+    // Default empty implementation
+}

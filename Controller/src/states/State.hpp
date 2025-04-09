@@ -16,6 +16,7 @@ class State {
         virtual void handleWebSocketEvent(char message[]);
 
         virtual void update();
+        virtual void destroy();
 };
 
 

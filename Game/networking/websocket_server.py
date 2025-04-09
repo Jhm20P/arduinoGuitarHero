@@ -159,6 +159,7 @@ class GameWebSocketServer:
             
             except websockets.exceptions.ConnectionClosed:
                 print(f"Connection closed with client: {websocket.remote_address}")
+                self.game_server.remove_client(websocket)
             
             finally:
                 # Unregister client when connection is closed

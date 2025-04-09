@@ -118,6 +118,12 @@ void MenuState::sendConnectionRequest(char ipaddress[], int port)
     
 }
 
+void MenuState::destroy()
+{
+    // Clean up resources or reset the display for the menu state
+    carrier->display.fillScreen(ST7735_BLACK);
+}
+
 void MenuState::handleWebSocketEvent(char message[])
 {
     // Handle the WebSocket event in the menu state

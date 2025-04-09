@@ -14,6 +14,8 @@ public:
     void initDisplay() override;
     void update() override;
     void handleWebSocketEvent(char message[]) override;
+    void destroy() override;
+    
     void sendConnectionRequest(char ipaddress[], int port);
 };
 

@@ -8,7 +8,6 @@ class ServerInfo;
 
 class websocket {
     private:
-        static StateManager *_stateManager;
         static WiFiClient client;
         static WebSocketsClient webSocket;
         static ServerInfo* servers[10];
@@ -16,6 +15,7 @@ class websocket {
         static int currentScanIndex;
         static unsigned long lastScanTime;
     public:
+        static StateManager *_stateManager;
         static void initServerScan();
         static void updateServerScan();
         static ServerInfo** getScannedServers();

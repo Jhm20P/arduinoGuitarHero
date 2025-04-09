@@ -196,17 +196,12 @@ void websocket::webSocketSend(char message[]) {
 void websocket::webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
     switch (type) {
         case WStype_DISCONNECTED:
-          Serial.println("[WSc] Disconnected!");
+          webSocket.disconnect();
+          _stateManager->setState("MenuState");
           break;
         case WStype_CONNECTED:
-          Serial.println("[WSc] Connected!");
-    
-          // send message to server when Connected
-          webSocket.sendTXT("Connected");
           break;
         case WStype_TEXT:
-          Serial.print("[WSc] get text:");
-          Serial.println((char *)payload);
 
           // If payload starts with "SM-", it indicates a state change
           if (strncmp((char *)payload, "SM-", 3) == 0) {
@@ -222,12 +217,10 @@ void websocket::webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
           if (_stateManager) {
             // Convert payload to char array
             char message[length];
-            strncpy(message, (char *)payload, length - 1);
+            strncpy(message, (char *)payload, length);
 
             // Call the handleWebSocketEvent method of the current state
             _stateManager->handleWebSocketEvent(message);
-          } else {
-            Serial.println("StateManager is not registered.");
           }
     
           // send message to server
@@ -270,7 +263,7 @@ if (WiFi.status() == WL_NO_MODULE) {
     status = WiFi.begin(SSID, PASS);
 
     // wait 10 seconds for connection:
-    delay(10000);
+    delay(1000);
   }
 
   Serial.println("Connected to WiFi");

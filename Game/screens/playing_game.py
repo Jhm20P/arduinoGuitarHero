@@ -53,6 +53,19 @@ class PlayingGameScreen(BaseScreen):
         
         # Back button
         self.back_button_rect = pygame.Rect(20, 540, 150, 40)
+
+        # Broadcast game start message to all clients
+        if (self.game_instance and 
+            hasattr(self.game_instance, 'game_server') and 
+            self.game_instance.game_server and 
+            hasattr(self.game_instance.game_server, 'outgoing_message_queue')):
+            
+            # Format: "Game-Start"
+            message = f"Game-Start"
+            
+            # Use the broadcast_message method from GameServer
+            self.game_instance.game_server.broadcast_message(message)
+
     def load_midi(self):
         """Load and prepare the MIDI file for playing"""
         if not self.midi_file:
@@ -158,9 +171,21 @@ class PlayingGameScreen(BaseScreen):
                         self.go_back()
     
     def go_back(self):
+        """Go back to the lobby screen"""
+        # Broadcast game end message to all clients
+        if (self.game_instance and 
+            hasattr(self.game_instance, 'game_server') and 
+            self.game_instance.game_server and 
+            hasattr(self.game_instance.game_server, 'outgoing_message_queue')):
+            
+            # Format: "Game-End"
+            message = f"Game-End"
+            
+            # Use the broadcast_message method from GameServer
+            self.game_instance.game_server.broadcast_message(message)
         # Import here to avoid circular imports
-        from screens.main_menu import MainMenuScreen
-        self.next_screen = MainMenuScreen(self.game_instance)
+        from screens.lobby_screen import LobbyScreen
+        self.next_screen = LobbyScreen(self.game_instance)
         
     def handle_gameplay_input(self, key):
         """Handle gameplay inputs - will be integrated with controller data"""
@@ -222,6 +247,10 @@ class PlayingGameScreen(BaseScreen):
             time_to_hit = hit_zone_y / self.note_speed  # Time in frames
             # Convert to milliseconds (assuming 60 fps)
             time_to_hit_ms = int(time_to_hit * 1000 / 60)
+
+            # Calculate the time when the note hits the hit zone since the start of the song in ms
+            note_time = self.midi_events[self.current_event_index].time * 1000 * self.tempo_scale
+
             
             # Add note to the game
             self.notes.append({
@@ -237,7 +266,7 @@ class PlayingGameScreen(BaseScreen):
                     hasattr(self.game_instance.game_server, 'outgoing_message_queue')):
                     
                     # Format: "NOTE-{track}-{time_in_ms}"
-                    message = f"NOTE-{track}-{time_to_hit_ms}"
+                    message = f"NOTE-{track}-{note_time}"
                     
                     # Use the broadcast_message method from GameServer
                     self.game_instance.game_server.broadcast_message(message)
